@@ -478,7 +478,8 @@ class Consul(object):
                 consistency=None,
                 keys=False,
                 separator=None,
-                dc=None):
+                dc=None,
+                prefix='/v1/kv/'):
             """
             Returns a tuple of (*index*, *value[s]*)
 
@@ -520,6 +521,11 @@ class Consul(object):
             """
             assert not key.startswith('/'), \
                 'keys should not start with a forward slash'
+            prefix = prefix or self.agent.prefix
+            assert prefix.startswith('/'), \
+                'prefix should start with a forward slash'
+            assert prefix.endswith('/'), \
+                'prefix should end with a forward slash'
             params = []
             if index:
                 params.append(('index', index))
@@ -530,6 +536,7 @@ class Consul(object):
             token = token or self.agent.token
             if token:
                 params.append(('token', token))
+            prefix = prefix or self.agent.prefix
             dc = dc or self.agent.dc
             if dc:
                 params.append(('dc', dc))
@@ -550,7 +557,7 @@ class Consul(object):
                 one = True
             return self.agent.http.get(
                 CB.json(index=True, decode=decode, one=one),
-                '/v1/kv/%s' % key,
+                prefix + key,
                 params=params)
 
         def put(
@@ -562,7 +569,8 @@ class Consul(object):
                 acquire=None,
                 release=None,
                 token=None,
-                dc=None):
+                dc=None,
+                prefix='/v1/kv/'):
             """
             Sets *key* to the given *value*.
 
@@ -598,6 +606,11 @@ class Consul(object):
             """
             assert not key.startswith('/'), \
                 'keys should not start with a forward slash'
+            prefix = prefix or self.agent.prefix
+            assert prefix.startswith('/'), \
+                'prefix should start with a forward slash'
+            assert prefix.endswith('/'), \
+                'prefix should end with a forward slash'
             assert value is None or \
                 isinstance(value, (six.string_types, six.binary_type)), \
                 "value should be None or a string / binary data"
@@ -618,9 +631,9 @@ class Consul(object):
             if dc:
                 params.append(('dc', dc))
             return self.agent.http.put(
-                CB.json(), '/v1/kv/%s' % key, params=params, data=value)
+                CB.json(), prefix + key, params=params, data=value)
 
-        def delete(self, key, recurse=None, cas=None, token=None, dc=None):
+        def delete(self, key, recurse=None, cas=None, token=None, dc=None, prefix='/v1/kv/'):
             """
             Deletes a single key or if *recurse* is True, all keys sharing a
             prefix.
@@ -641,6 +654,11 @@ class Consul(object):
             """
             assert not key.startswith('/'), \
                 'keys should not start with a forward slash'
+            prefix = prefix or self.agent.prefix
+            assert prefix.startswith('/'), \
+                'prefix should start with a forward slash'
+            assert prefix.endswith('/'), \
+                'prefix should end with a forward slash'
 
             params = []
             if recurse:
@@ -655,7 +673,7 @@ class Consul(object):
                 params.append(('dc', dc))
 
             return self.agent.http.delete(
-                CB.json(), '/v1/kv/%s' % key, params=params)
+                CB.json(), prefix + key, params=params)
 
     class Txn(object):
         """
